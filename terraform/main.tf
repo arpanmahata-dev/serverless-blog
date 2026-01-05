@@ -332,90 +332,81 @@ source_arn    = "${aws_apigatewayv2_api.blog_api.execution_arn}//"
 # ===================================
 # S3 Bucket for Static Website
 # ===================================
-resource "random_id" "bucket_suffix" {
-byte_length = 4
-}
-resource "aws_s3_bucket" "website" {
-bucket = "serverless-blog-${random_id.bucket_suffix.hex}"
-tags = {
-Name    = "Blog Website Bucket"
-Project = "Serverless-Blog"
-}
-}
-resource "aws_s3_bucket_website_configuration" "website" {
-bucket = aws_s3_bucket.website.id
-index_document {
-suffix = "index.html"
-}
-error_document {
-key = "error.html"
-}
-}
-resource "aws_s3_bucket_public_access_block" "website" {
-bucket = aws_s3_bucket.website.id
-block_public_acls       = false
-block_public_policy     = false
-ignore_public_acls      = false
-restrict_public_buckets = false
-}
-resource "aws_s3_bucket_policy" "website" {
-bucket = aws_s3_bucket.website.id
-policy = jsonencode({
-Version = "2012-10-17"
-Statement = [
-{
-Sid       = "PublicReadGetObject"
-Effect    = "Allow"
-Principal = ""
-Action    = "s3:GetObject"
-Resource  = "${aws_s3_bucket.website.arn}/"
-}
-]
-})
-depends_on = [aws_s3_bucket_public_access_block.website]
-}
+
+# resource "random_id" "bucket_suffix" {
+# byte_length = 4
+# }
+# resource "aws_s3_bucket" "website" {
+# bucket = "serverless-blog-${random_id.bucket_suffix.hex}"
+# tags = {
+# Name    = "Blog Website Bucket"
+# Project = "Serverless-Blog"
+# }
+# }
+# resource "aws_s3_bucket_website_configuration" "website" {
+# bucket = aws_s3_bucket.website.id
+# index_document {
+# suffix = "index.html"
+# }
+# error_document {
+# key = "error.html"
+# }
+# }
+# resource "aws_s3_bucket_public_access_block" "website" {
+# bucket = aws_s3_bucket.website.id
+# block_public_acls       = false
+# block_public_policy     = false
+# ignore_public_acls      = false
+# restrict_public_buckets = false
+# }
+# resource "aws_s3_bucket_policy" "website" {
+# bucket = aws_s3_bucket.website.id
+# policy = jsonencode({
+# Version = "2012-10-17"
+# Statement = [
+# {
+# Sid       = "PublicReadGetObject"
+# Effect    = "Allow"
+# Principal = "*" # This was causing the error
+# Action    = "s3:GetObject"
+# Resource  = "${aws_s3_bucket.website.arn}/"
+# }
+# ]
+# })
+# depends_on = [aws_s3_bucket_public_access_block.website]
+# }
 # ===================================
 # Outputs
 # ===================================
+
 output "api_endpoint" {
-value       = aws_apigatewayv2_api.blog_api.api_endpoint
-description = "API Gateway endpoint URL - USE THIS IN YOUR FRONTEND"
+  value       = aws_apigatewayv2_api.blog_api.api_endpoint
+  description = "API Gateway endpoint URL - USE THIS IN YOUR FRONTEND"
 }
-output "website_bucket" {
-value       = aws_s3_bucket.website.bucket
-description = "S3 bucket name for website"
-}
-output "website_url" {
-value       = "http://${aws_s3_bucket_website_configuration.website.website_endpoint}"
-description = "Website URL"
-}
-output "dynamodb_table" {
-value       = aws_dynamodb_table.blog_posts.name
-description = "DynamoDB table name"
-}
+
 output "instructions" {
-value = <<-EOT
-✅ Serverless Blog Infrastructure Deployed Successfully!
-📋 Next Steps:
-
-Update frontend with API endpoint:
-API Endpoint: ${aws_apigatewayv2_api.blog_api.api_endpoint}
-Edit frontend/index.html and replace:
-const API_URL = 'YOUR_API_GATEWAY_URL_HERE';
-With:
-const API_URL = '${aws_apigatewayv2_api.blog_api.api_endpoint}';
-Upload frontend to S3:
-aws s3 cp frontend/index.html s3://${aws_s3_bucket.website.bucket}/
-Access your blog:
-${aws_s3_bucket_website_configuration.website.website_endpoint}
-Test API endpoints:
-
-GET ${aws_apigatewayv2_api.blog_api.api_endpoint}/posts
-POST ${aws_apigatewayv2_api.blog_api.api_endpoint}/posts
-DELETE ${aws_apigatewayv2_api.blog_api.api_endpoint}/posts/{id}
-
-
-
-EOT
-description = "Instructions for completing the setup"
+  value = <<-EOT
+  
+  ✅ Serverless Blog Infrastructure Deployed Successfully!
+  
+  📋 Next Steps:
+  
+  1. Update frontend with API endpoint:
+     API Endpoint: ${aws_apigatewayv2_api.blog_api.api_endpoint}
+     
+     Edit frontend/index.html and replace:
+     const API_URL = 'YOUR_API_GATEWAY_URL_HERE';
+     
+     With:
+     const API_URL = '${aws_apigatewayv2_api.blog_api.api_endpoint}';
+  
+  2. Open frontend/index.html directly in your browser OR
+     Host it on GitHub Pages (free)
+  
+  3. Test API endpoints:
+     - GET ${aws_apigatewayv2_api.blog_api.api_endpoint}/posts
+     - POST ${aws_apigatewayv2_api.blog_api.api_endpoint}/posts
+  
+  EOT
+  description = "Instructions for completing the setup"
 }
